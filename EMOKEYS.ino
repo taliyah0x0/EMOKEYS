@@ -10,7 +10,7 @@ char buf[10];
 uint16_t arrays[9][2304];
 uint16_t myIndex = 0;
 uint8_t unicodeIndex = 0;
-bool down = false;
+bool emojiType = 0;
 
 // Set pins for rows
 const byte rows[] = {A0, A1};
@@ -22,7 +22,7 @@ const byte cols[] = {A2, A3, A4};
 // const byte cols[] = {5, 6, 7, 8};
 const int colCount = sizeof(cols) / sizeof(cols[0]);
 
-String unicodes[3][3] = {{"d83edef6", "d83edef6", "d83edef6"}, {"d83edef6", "d83edef6", "d83edef6"}, {"d83edef6", "d83edef6", "d83edef6"}};
+String codes[3][3] = {{"d83edef6", "d83edef6", "d83edef6"}, {"d83edef6", "d83edef6", "d83edef6"}, {"d83edef6", "d83edef6", "d83edef6"}};
 bool keyStates[2][3] = { {false, false, false}, {false, false, false} };
 
 uint16_t currentRow = 0;
@@ -83,19 +83,19 @@ void setup() {
   display2_1.begin();
   display2_2.begin();
 
-  display0_0.fillScreen(0x0000);
-  display0_1.fillScreen(0x0000);
-  display0_2.fillScreen(0x0000);
-
-  display1_0.fillScreen(0x0000);
-  display1_1.fillScreen(0x0000);
-  display1_2.fillScreen(0x0000);
+  SerialUSB.print(preLoad);
 
   display2_0.fillScreen(0x0000);
   display2_1.fillScreen(0x0000);
   display2_2.fillScreen(0x0000);
 
-  SerialUSB.print(2);
+  display1_0.fillScreen(0x0000);
+  display1_1.fillScreen(0x0000);
+  display1_2.fillScreen(0x0000);
+
+  display0_0.fillScreen(0x0000);
+  display0_1.fillScreen(0x0000);
+  display0_2.fillScreen(0x0000);
 }
 
 void loop() {
@@ -105,9 +105,9 @@ void loop() {
       for (uint16_t m = 0; m < 3; m++) {
         if (unicodeIndex < (m + 1) * 3 && unicodeIndex >= 3 * m) {
           if (preLoad > 0) {
-            unicodes[preLoad][unicodeIndex - 3 * m] = String(buf).substring(1);
+            codes[preLoad][unicodeIndex - 3 * m] = String(buf).substring(1);
           } else {
-            unicodes[rowLoad * 2][unicodeIndex - 3 * m] = String(buf).substring(1);
+            codes[rowLoad * 2][unicodeIndex - 3 * m] = String(buf).substring(1);
           }
         }
       }
@@ -129,19 +129,23 @@ void loop() {
     if (myIndex == 2304 * 3) {
 
       if (preLoad > 0) { // Load in all 9 graphics in the beginning
-        if (preLoad == 2) {
+
+        myIndex = 0;
+        preLoad--;
+        SerialUSB.print(preLoad);
+
+        if (preLoad == 1) {
           display2_0.drawRGBBitmap(24, 8, arrays[6], 48, 48);
           display2_1.drawRGBBitmap(24, 8, arrays[7], 48, 48);
           display2_2.drawRGBBitmap(24, 8, arrays[8], 48, 48);
-        } else if (preLoad == 1) {
+        } else if (preLoad == 0) {
           display1_0.drawRGBBitmap(24, 8, arrays[3], 48, 48);
           display1_1.drawRGBBitmap(24, 8, arrays[4], 48, 48);
           display1_2.drawRGBBitmap(24, 8, arrays[5], 48, 48);
         }
-        myIndex = 0;
-        preLoad--;
-        SerialUSB.print(preLoad);
+
       } else { // Otherwise load in the top or bottom row
+
         if (rowLoad == 0) {
           display0_0.drawRGBBitmap(24, 8, arrays[0], 48, 48);
           display0_1.drawRGBBitmap(24, 8, arrays[1], 48, 48);
@@ -151,6 +155,7 @@ void loop() {
           display2_1.drawRGBBitmap(24, 8, arrays[7], 48, 48);
           display2_2.drawRGBBitmap(24, 8, arrays[8], 48, 48);
         }
+
       }
     }
   }
@@ -172,60 +177,97 @@ void readMatrix() {
       if (keys[rowIndex][colIndex] == LOW) {
         if (keyStates[rowIndex][colIndex] == false) {
           if (colIndex != 2) {
-            Keyboard.press(0x82);
-            Keyboard.print(unicodes[rowIndex][colIndex]);
-            Keyboard.release(0x82);
+            if (emojiType == 0) {
+              Keyboard.press(0x82);
+              Keyboard.print(codes[rowIndex][colIndex]);
+              Keyboard.release(0x82);
+            } else {
+              Keyboard.print(":" + codes[rowIndex][colIndex] + ":");
+            }
+
           } else {
-            if (rowIndex == 0 && currentRow >= 1) { // Go Up a Row
-              for (int m = 5; m >= 0; m--) {
-                for (uint16_t t = 0; t < 2304; t++) {
-                  arrays[m + 3][t] = arrays[m][t];
-                }
-                for (int t = 0; t < 3; t++) {
-                  unicodes[int(m / 3) + 1][t] = unicodes[int(m / 3)][t];
-                }
+
+            if (rowIndex == 1) {
+
+              if (emojiType == 0) {
+                emojiType = 1;
+              } else {
+                emojiType = 0;
               }
 
-              currentRow -= 1;
-              rowLoad = 0;
-              SerialUSB.print(currentRow);
+              SerialUSB.print(-2);
 
-              display2_0.drawRGBBitmap(24, 8, arrays[6], 48, 48);
-              display2_1.drawRGBBitmap(24, 8, arrays[7], 48, 48);
-              display2_2.drawRGBBitmap(24, 8, arrays[8], 48, 48);
-
-              display1_0.drawRGBBitmap(24, 8, arrays[3], 48, 48);
-              display1_1.drawRGBBitmap(24, 8, arrays[4], 48, 48);
-              display1_2.drawRGBBitmap(24, 8, arrays[5], 48, 48);
-
-              display0_0.fillScreen(0x0000);
-              display0_1.fillScreen(0x0000);
-              display0_2.fillScreen(0x0000);
-            } else if (rowIndex == 1) { // Go Down a Row
-              for (int m = 0; m < 6; m++) {
-                for (uint16_t t = 0; t < 2304; t++) {
-                  arrays[m][t] = arrays[m + 3][t];
-                }
-                for (int t = 0; t < 3; t++) {
-                  unicodes[int(m / 3)][t] = unicodes[int(m / 3) + 1][t];
-                }
+              if (SerialUSB.readString() == "a") {
+                preLoad = 2;
+                rowLoad = 0;
+                SerialUSB.print(preLoad);
               }
-
-              currentRow += 1;
-              rowLoad = 1;
-              SerialUSB.print(currentRow + 2);
-
-              display0_0.drawRGBBitmap(24, 8, arrays[0], 48, 48);
-              display0_1.drawRGBBitmap(24, 8, arrays[1], 48, 48);
-              display0_2.drawRGBBitmap(24, 8, arrays[2], 48, 48);
-
-              display1_0.drawRGBBitmap(24, 8, arrays[3], 48, 48);
-              display1_1.drawRGBBitmap(24, 8, arrays[4], 48, 48);
-              display1_2.drawRGBBitmap(24, 8, arrays[5], 48, 48);
 
               display2_0.fillScreen(0x0000);
               display2_1.fillScreen(0x0000);
               display2_2.fillScreen(0x0000);
+
+              display1_0.fillScreen(0x0000);
+              display1_1.fillScreen(0x0000);
+              display1_2.fillScreen(0x0000);
+
+              display0_0.fillScreen(0x0000);
+              display0_1.fillScreen(0x0000);
+              display0_2.fillScreen(0x0000);
+
+            } else {
+
+              if (rowIndex == 0 && currentRow >= 1) { // Go Up a Row
+                for (int m = 5; m >= 0; m--) {
+                  for (uint16_t t = 0; t < 2304; t++) {
+                    arrays[m + 3][t] = arrays[m][t];
+                  }
+                  for (int t = 0; t < 3; t++) {
+                    codes[int(m / 3) + 1][t] = codes[int(m / 3)][t];
+                  }
+                }
+
+                currentRow -= 1;
+                rowLoad = 0;
+                SerialUSB.print(currentRow);
+
+                display2_0.drawRGBBitmap(24, 8, arrays[6], 48, 48);
+                display2_1.drawRGBBitmap(24, 8, arrays[7], 48, 48);
+                display2_2.drawRGBBitmap(24, 8, arrays[8], 48, 48);
+
+                display1_0.drawRGBBitmap(24, 8, arrays[3], 48, 48);
+                display1_1.drawRGBBitmap(24, 8, arrays[4], 48, 48);
+                display1_2.drawRGBBitmap(24, 8, arrays[5], 48, 48);
+
+                display0_0.fillScreen(0x0000);
+                display0_1.fillScreen(0x0000);
+                display0_2.fillScreen(0x0000);
+              } else if (rowIndex == 1) { // Go Down a Row
+                for (int m = 0; m < 6; m++) {
+                  for (uint16_t t = 0; t < 2304; t++) {
+                    arrays[m][t] = arrays[m + 3][t];
+                  }
+                  for (int t = 0; t < 3; t++) {
+                    codes[int(m / 3)][t] = codes[int(m / 3) + 1][t];
+                  }
+                }
+
+                currentRow += 1;
+                rowLoad = 1;
+                SerialUSB.print(currentRow + 2);
+
+                display0_0.drawRGBBitmap(24, 8, arrays[0], 48, 48);
+                display0_1.drawRGBBitmap(24, 8, arrays[1], 48, 48);
+                display0_2.drawRGBBitmap(24, 8, arrays[2], 48, 48);
+
+                display1_0.drawRGBBitmap(24, 8, arrays[3], 48, 48);
+                display1_1.drawRGBBitmap(24, 8, arrays[4], 48, 48);
+                display1_2.drawRGBBitmap(24, 8, arrays[5], 48, 48);
+
+                display2_0.fillScreen(0x0000);
+                display2_1.fillScreen(0x0000);
+                display2_2.fillScreen(0x0000);
+              }
             }
           }
           keyStates[rowIndex][colIndex] = true;
@@ -262,18 +304,4 @@ int readline(int readch, char *buffer, int len) {
     }
   }
   return 0;
-}
-
-void printMatrix() {
-  for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-    if (rowIndex < 10)
-      SerialUSB.print(rowIndex); SerialUSB.print(F(": "));
-
-    for (int colIndex = 0; colIndex < colCount; colIndex++) {
-      SerialUSB.print(keys[colIndex][rowIndex]);
-      if (colIndex < colCount)
-        SerialUSB.print(F(", "));
-    }
-    SerialUSB.println();
-  }
 }

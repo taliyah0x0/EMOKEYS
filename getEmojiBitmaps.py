@@ -3,7 +3,6 @@ import asyncio
 import requests
 import cv2
 import os
-from PIL import Image, ImageOps
 
 # Use top most popular emojis, or fill in the emojis array
 use_top = 20
@@ -12,20 +11,29 @@ emojis = []
 
 
 async def getBitmaps():
-    # Remove the old emoji files
-    files = os.listdir("Emojis")
-    for item in files:
-        os.remove(f"Emojis/{item}")
+    if os.path.isdir('Emojis') == True:
+        # Remove the old emoji files
+        files = os.listdir("Emojis")
+        for item in files:
+            os.remove(f"Emojis/{item}")
+    else:
+        os.mkdir("Emojis")
 
-    # Remove the old bitmap files
-    files = os.listdir("allEmojiBitmaps")
-    for item in files:
-        os.remove(f"allEmojiBitmaps/{item}")
+    if os.path.isdir('allEmojiBitmaps') == True:
+        # Remove the old bitmap files
+        files = os.listdir("allEmojiBitmaps")
+        for item in files:
+            os.remove(f"allEmojiBitmaps/{item}")
+    else:
+        os.mkdir("allEmojiBitmaps")
 
-    # Remove the old unicode files
-    files = os.listdir("allEmojiUnicodes")
-    for item in files:
-        os.remove(f"allEmojiUnicodes/{item}")
+    if os.path.isdir('allEmojiUnicodes') == True:
+        # Remove the old unicode files
+        files = os.listdir("allEmojiUnicodes")
+        for item in files:
+            os.remove(f"allEmojiUnicodes/{item}")
+    else:
+        os.mkdir("allEmojiUnicodes")
 
     browser = await launch({"headless": True})
     page = await browser.newPage()
@@ -88,10 +96,6 @@ async def getBitmaps():
         after = cv2.resize(before, (48, 48))
         cv2.imwrite(f"Emojis/{e}.png", after)
 
-        # img = Image.open(f'Emojis/{emoji_names[e]}.png')
-        # img_with_border = ImageOps.expand(img, border=8, fill='black')
-        # img_with_border.save(f'Emojis/{emoji_names[e]}.png')
-
         # Extract RGB pixel values
         await page.goto("https://www.boxentriq.com/code-breaking/pixel-values-extractor")
 
@@ -123,14 +127,16 @@ async def getBitmaps():
         split = values.split(",")
         lines = "\n".join(split)
 
+        # Write the RGB bitmap to individual files
         with open(f"allEmojiBitmaps/{e}.txt", "w") as f:
             f.write(lines)
 
-        # Write unicodes to individual documents
+        # Get the unicode for the emoji
         codepoint = ord(emojis[e])
         lead = hex(codepoint)
 
         # Characters like ♥ and ♠ don't need converstion to surrogate
+        # Write the unicodes to individual files
         if len(lead) != 6:
             offset = 0xD800 - (0x10000 >> 10)
 
