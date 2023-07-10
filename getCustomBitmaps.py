@@ -1,11 +1,17 @@
+
+# EMOKEYS by Taliyah
+# Run this code to automatically download several custom discord emotes
+
 from pyppeteer import launch
 import asyncio
 import requests
 import cv2
 import os
 
-# Use the top most popular emotes, or fill in the customs ID array
-use_top = 20
+# Use the top most popular emotes, or add a emoji.gg link
+num_downloads = 20
+# Ex: 'https://emoji.gg/pack/1320-hello-kitty' <-- Downloads from Hello Kitty emoji pack
+page_link = ''
 
 async def getBitmaps():
     if os.path.isdir('Custom') == True:
@@ -32,14 +38,20 @@ async def getBitmaps():
     else:
         os.mkdir("allCustomIDs")
 
+    os.mkdir("tempCustom")
+
     browser = await launch({'headless': True})
     page = await browser.newPage()
 
     custom = 0
     ind = 0
-    while custom < use_top:
+    while custom < num_downloads:
+        # Check if there's a emoji pack link, else get most popular emojis
+        if page_link == '':
+            page_link = 'https://emoji.gg/?sort=downloads'
+
         # Need to reload the page each time
-        await page.goto(f'https://emoji.gg/?sort=downloads')
+        await page.goto(page_link)
         image = await page.querySelectorAll('.lazy')
         image_url = await page.evaluate('(image_element) => image_element.getAttribute("src")', image[ind])
 
@@ -102,6 +114,7 @@ async def getBitmaps():
     files = os.listdir("tempCustom")
     for item in files:
         os.remove(f"tempCustom/{item}")
+    os.rmdir("tempCustom")
 
     await browser.close()
 

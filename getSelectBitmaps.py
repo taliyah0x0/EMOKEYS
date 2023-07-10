@@ -1,3 +1,5 @@
+
+# EMOKEYS by Taliyah
 # Run this code to download bitmaps from a folder of saved images
 
 from pyppeteer import launch
@@ -34,6 +36,9 @@ async def getBitmaps():
             os.remove(f'allCustomIDs/{item}')
     customs = os.listdir('allCustomIDs')
     num_customs = len(customs)
+
+    os.mkdir("tempEmoji")
+    os.mkdir("tempCustom")
 
     browser = await launch({'headless': True})
     page = await browser.newPage()
@@ -104,9 +109,11 @@ async def getBitmaps():
                     f.write(str(lead)[2:])
             num_emojis += 1
         else:
+
             '''# Write the RGB bitmap to individual files
             with open(f'allCustomBitmaps/{num_customs}.txt', 'w') as f:
                 f.write(lines)'''
+            
             with open(f'allCustomBitmaps/{num_customs}.txt', 'w') as f:
                 f.write('const uint16_t ' + files[e][:-4] + '[2304] PROGMEM = {' + values + '};')
 
@@ -119,10 +126,12 @@ async def getBitmaps():
     files = os.listdir("tempEmoji")
     for item in files:
         os.remove(f"tempEmoji/{item}")
+    os.rmdir("tempEmoji")
 
     files = os.listdir("tempCustom")
     for item in files:
         os.remove(f"tempCustom/{item}")
+    os.rmdir("tempCustom")
 
     await browser.close()
 

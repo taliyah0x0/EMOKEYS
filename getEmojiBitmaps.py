@@ -1,3 +1,7 @@
+
+# EMOKEYS by Taliyah
+# Run this code to automatically download several emojis
+
 from pyppeteer import launch
 import asyncio
 import requests
@@ -34,6 +38,8 @@ async def getBitmaps():
             os.remove(f"allEmojiUnicodes/{item}")
     else:
         os.mkdir("allEmojiUnicodes")
+
+    os.mkdir("tempEmoji")
 
     browser = await launch({"headless": True})
     page = await browser.newPage()
@@ -153,6 +159,7 @@ async def getBitmaps():
     files = os.listdir("tempEmoji")
     for item in files:
         os.remove(f"tempEmoji/{item}")
+    os.rmdir("tempEmoji")
 
     await browser.close()
 
