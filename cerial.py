@@ -21,6 +21,7 @@ while True:
     signal = s.readline()
     if signal != b'':
         found = int(signal)
+        print(signal)
 
     if found > -1: # Received cue to send bitmap array
         for sect in range(3): # Send 3 icons per row
@@ -30,7 +31,7 @@ while True:
 
                 for line in lines:
                     s.write(bytes(line.strip() + '\n', 'utf-8'))
-                    time.sleep(0.00003)
+                    time.sleep(0.000032)
                 
                 # Also send the corresponding unicode/ID to be used in printing
                 file = open(f'{code_prefix}/{found * 3 + sect}.txt', 'r')
@@ -41,7 +42,7 @@ while True:
             else: # No file found, send a blank of all black
                 for x in range(2304):
                     s.write(bytes('0\n', 'utf-8'))
-                    time.sleep(0.00003)
+                    time.sleep(0.000032)
                 
                 # Unicode/ID will also be blank
                 s.write(bytes('u' + '' + '\n', 'utf-8'))

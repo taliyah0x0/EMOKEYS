@@ -1,19 +1,30 @@
 
 # EMOKEYS by Taliyah
-# Run this code to automatically download several custom discord emotes
+# Run this code to automatically download several custom discord emoji
+# Remember to upload the emoji from the 'Upload' folder into your server!!
+# For animated GIF emoji, use Not Quite Nitro to find and match alias names!
 
 from pyppeteer import launch
 import asyncio
 import requests
 import cv2
 import os
-
-# Use the top most popular emotes, or add a emoji.gg link
-num_downloads = 20
-# Ex: 'https://emoji.gg/pack/1320-hello-kitty' <-- Downloads from Hello Kitty emoji pack
-page_link = ''
+from PIL import Image
 
 async def getBitmaps():
+     # Use the top most popular emotes, or add a emoji.gg link
+    num_downloads = 20
+    # Ex: 'https://emoji.gg/pack/1320-hello-kitty' <-- Downloads from Hello Kitty emoji pack
+    page_link = ''
+
+    if os.path.isdir('Upload') == True:
+        # Remove the old upload files
+        files = os.listdir("Upload")
+        for item in files:
+            os.remove(f"Upload/{item}")
+    else:
+        os.mkdir("Upload")
+
     if os.path.isdir('Custom') == True:
         # Remove the old custom files
         files = os.listdir("Custom")
@@ -55,13 +66,71 @@ async def getBitmaps():
         image = await page.querySelectorAll('.lazy')
         image_url = await page.evaluate('(image_element) => image_element.getAttribute("src")', image[ind])
 
-        if image_url[-4:] == '.png': # Skip the GIFs
-            link = image_url
-            name = link[29:-4]
-            print(link)
+        name = ''
+        if image_url[-4:] == '.gif' or image_url[-4:] == '.png':
+            if image_url[-4:] == '.gif':
+                link = image_url
+                temp_name = link[29:-4]
+                letters = []
+                for x in range(len(temp_name) - 1, -1, -1):
+                    if temp_name[x] != '_' and temp_name[x] != '-':
+                        letters.append(temp_name[x])
+                    else:
+                        break
+                letters.reverse()
+                name = ''.join(letters)
+                print(link)
 
-            myfile = requests.get(link)
-            open(f'Custom/{custom}.png', 'wb').write(myfile.content)
+                myfile = requests.get(link)
+                open(f'Upload/{name}.gif', 'wb').write(myfile.content)
+
+                # Split the GIF into frames
+                await page.goto('https://ezgif.com/split')
+
+                myinput = await page.querySelector("input[type='file']")
+                await myinput.uploadFile(f'Upload/{name}.gif')
+                await page.click('.primary')
+
+                await page.waitForSelector('#target')
+                await page.click('.primary')
+
+                await page.waitForSelector('.danger')
+                
+                # Find only img of the gif
+                images = await page.querySelectorAll('img')
+                frames = []
+                for i in range(len(images)):
+                    frame_url = await page.evaluate('(image_element) => image_element.getAttribute("src")', images[i])
+                    if frame_url[-4:] == '.gif':
+                        frames.append(frame_url)
+                # Download the frame near the beginning
+                link = 'https:' + frames[int(len(frames) * 0.25)]
+                print(link)
+
+                myfile = requests.get(link)
+                open(f'tempCustom/{custom}.gif', 'wb').write(myfile.content)
+
+                # Convert the GIF frame to png
+                gif=f'tempCustom/{custom}.gif'
+                img = Image.open(gif)
+                img.save(f'Custom/{custom}.png','png', optimize=True, quality=100)
+
+            elif image_url[-4:] == '.png':
+                link = image_url
+                temp_name = link[29:-4]
+                letters = []
+                for x in range(len(temp_name) - 1, -1, -1):
+                    if temp_name[x] != '_' and temp_name[x] != '-':
+                        letters.append(temp_name[x])
+                    else:
+                        break
+                letters.reverse()
+                name = ''.join(letters)
+                print(link)
+
+                myfile = requests.get(link)
+                open(f'Upload/{name}.png', 'wb').write(myfile.content)
+                open(f'Custom/{custom}.png', 'wb').write(myfile.content)
 
             # Resize the image to 48 x 48 pixels
             before = cv2.imread(f'Custom/{custom}.png')
