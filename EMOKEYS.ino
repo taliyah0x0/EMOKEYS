@@ -213,6 +213,9 @@ void readMatrix() {
 
           } else {
 
+            myIndex = 0;
+            unicodeIndex = 0;
+
             if (rowIndex == 1) {
 
               if (emojiType == 0) {
@@ -297,8 +300,6 @@ void readMatrix() {
                 display2_2.fillScreen(0x0000);
               }
             }
-            myIndex = 0;
-            unicodeIndex = 0;
           }
         }
         keyStates[rowIndex][colIndex] = true;
